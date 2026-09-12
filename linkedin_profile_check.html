@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A visual LinkedIn profile quick check for University of Iowa students.">
+<title>LinkedIn Profile Quick Check</title>
+<style>
+:root{
+  --y:#ffcd00;
+  --ink:#151515;
+  --muted:#59626b;
+  --line:#d5d7da;
+  --soft:#f1f2f3;
+  --green:#176b48;
+  --red:#9b3030;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:16px/1.5 Arial,Helvetica,sans-serif}
+button,a{font:inherit}
+.app{max-width:1180px;margin:auto;padding:30px 20px 52px}
+h1{margin:0;font-size:clamp(2rem,5vw,3rem);line-height:1.05;letter-spacing:-.03em}
+.intro{max-width:790px;margin:11px 0 18px;color:var(--muted);font-size:1.05rem}
+.top-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 22px}
+.open-link{
+  display:inline-flex;align-items:center;justify-content:center;min-height:42px;
+  padding:8px 14px;border:2px solid #111;border-radius:4px;background:#111;color:#fff;
+  font-weight:700;text-decoration:none
+}
+.progress-wrap{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.progress{flex:1;max-width:520px;height:10px;background:#e5e7e9;border-radius:10px;overflow:hidden}
+.progress span{display:block;width:0;height:100%;background:var(--green);transition:.2s}
+.progress-text{font-size:.9rem;font-weight:700}
+.workspace{
+  display:grid;
+  grid-template-columns:minmax(430px,1.16fr) minmax(340px,.84fr);
+  gap:24px;align-items:start
+}
+
+/* Visual profile */
+.profile-wrap{position:relative;padding:26px;background:#e8eaec;border-radius:7px}
+.profile{
+  max-width:610px;min-height:780px;margin:auto;background:#fff;
+  box-shadow:0 5px 20px #0003;border-radius:8px;overflow:hidden
+}
+.cover{height:115px;background:linear-gradient(135deg,#d9dde1,#eef0f2)}
+.profile-main{padding:0 28px 30px}
+.top-card{position:relative;padding-top:46px}
+.avatar{
+  position:absolute;left:0;top:-58px;width:108px;height:108px;border-radius:50%;
+  border:5px solid #fff;background:#c9ced3;display:grid;place-items:center
+}
+.avatar svg{width:66px;height:66px}
+.name{font-size:22px;font-weight:700}
+.headline{margin-top:3px;font-size:13px;line-height:1.4}
+.location{margin-top:4px;color:var(--muted);font-size:11px}
+.profile-section{
+  margin-top:18px;padding:14px;border:2px solid transparent;border-radius:5px;
+  border-top:1px solid var(--line)
+}
+.profile-section h2{margin:0 0 6px;font-size:15px}
+.profile-section p{margin:0;font-size:11px;line-height:1.45}
+.experience-row,.edu-row{display:grid;grid-template-columns:1fr;gap:2px;margin-top:8px}
+.role{font-size:12px;font-weight:700}
+.meta{font-size:10.5px;color:var(--muted)}
+.bullets{margin:5px 0 0;padding-left:17px;font-size:10.5px}
+.bullets li{margin:2px 0}
+.skill-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.skill-tag{
+  padding:3px 7px;border:1px solid #9aa0a6;border-radius:999px;
+  font-size:9.5px;background:#fff
+}
+.following{display:grid;gap:5px;margin-top:7px}
+.follow-row{display:flex;align-items:center;gap:7px;font-size:10.5px}
+.follow-dot{width:20px;height:20px;border-radius:4px;background:#d9dde1;flex:0 0 auto}
+.sample-note{margin:12px 0 0;color:var(--muted);font-size:.87rem;text-align:center}
+
+/* Highlight behavior */
+.profile [data-part]{transition:.15s}
+.profile[data-show=photo] [data-part=photo],
+.profile[data-show=headline] [data-part=headline],
+.profile[data-show=about] [data-part=about],
+.profile[data-show=experience] [data-part=experience],
+.profile[data-show=education] [data-part=education],
+.profile[data-show=skills] [data-part=skills],
+.profile[data-show=interests] [data-part=interests]{
+  outline:4px solid #ffcd00c4;outline-offset:4px;background:#ffcd0029
+}
+.profile[data-show=photo] [data-part=photo]{border-radius:50%}
+.profile[data-show=headline] [data-part=headline]{border-radius:2px}
+
+/* Side panel mirrors Resume Quick Check */
+.panel{
+  position:sticky;top:16px;border:1px solid #c9ccd0;border-top:8px solid var(--y);
+  border-radius:6px;padding:20px;box-shadow:0 10px 28px #00000012
+}
+.panel h2{margin:0 0 3px;font-size:1.4rem}
+.panel-help{margin:0 0 14px;color:var(--muted);font-size:.92rem}
+.callouts{display:grid;grid-template-columns:1fr;gap:8px}
+.accordion-item{width:100%}
+.callout{
+  display:flex;align-items:center;width:100%;min-height:45px;padding:8px 10px;
+  border:2px solid var(--line);border-radius:5px;background:#fff;text-align:left;
+  font:700 .91rem Arial;cursor:pointer
+}
+.callout .num{
+  display:inline-grid;place-items:center;width:23px;height:23px;margin-right:6px;
+  border-radius:50%;background:var(--y);flex:0 0 auto
+}
+.callout .chevron{margin-left:auto;font-size:1.25rem;line-height:1;transform:rotate(-90deg)}
+.callout.active .chevron{transform:rotate(0)}
+.callout:hover,.callout.active{border-color:#111;background:var(--soft)}
+.callout.active{border-radius:5px 5px 0 0}
+.callout.yes:after{content:"✓ Complete";margin-left:8px;color:var(--green);font-size:.78rem}
+.callout.no:after{content:"• On fix list";margin-left:8px;color:var(--red);font-size:.78rem}
+.question{
+  margin:0;padding:16px;background:#f5f6f7;border:2px solid #111;border-top:0;
+  border-left:5px solid var(--y);border-radius:0 0 5px 5px
+}
+.question h3{margin:0;font-size:1.12rem;line-height:1.35}
+.tip{margin:7px 0 12px;color:var(--muted);font-size:.9rem}
+.mini-checks{
+  margin:8px 0 13px;padding:10px 12px;background:#fff;border:1px solid var(--line);
+  border-radius:4px;font-size:.86rem
+}
+.mini-checks strong{display:block;margin-bottom:4px}
+.mini-checks ul{margin:0;padding-left:18px}
+.mini-checks li{margin:2px 0}
+.answers{display:flex;gap:9px}
+.answer,.utility{
+  min-height:42px;padding:9px 15px;border:2px solid #111;border-radius:4px;
+  background:#fff;font:700 .95rem Arial;cursor:pointer
+}
+.answer.primary{background:var(--y)}
+.answer[aria-pressed=true]{box-shadow:inset 0 0 0 3px #fff,0 0 0 2px #111}
+button:focus-visible,a:focus-visible{outline:3px solid #92bee6;outline-offset:2px}
+
+/* Fix list */
+.fixes{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.fix-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fixes h3{margin:0;font-size:1.1rem}
+.fix-count{padding:3px 8px;border-radius:20px;background:var(--soft);font-size:.8rem;font-weight:700}
+.fix-list{display:grid;gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.fix-list li{position:relative;padding-left:24px;font-size:.92rem}
+.fix-list li:before{content:"→";position:absolute;left:1px;font-weight:800}
+.fix-list a{display:inline-block;margin-top:3px;color:#164f86;font-weight:700}
+.empty{margin:9px 0 0;color:var(--muted);font-size:.92rem}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.utility{font-size:.86rem}
+.utility.copy{background:var(--y)}
+.status{min-height:21px;margin:7px 0 0;color:var(--green);font-size:.85rem;font-weight:700}
+.resource{text-align:center;margin:22px 0 0}
+.resource a{color:#164f86;font-weight:700}
+
+@media(max-width:850px){
+  .workspace{grid-template-columns:1fr}
+  .panel{position:static}
+  .profile-wrap{padding:14px}
+}
+@media(max-width:480px){
+  .app{padding:24px 13px 40px}
+  .answers>*{flex:1}
+  .profile-main{padding:0 18px 22px}
+  .avatar{width:88px;height:88px;top:-46px}
+  .top-card{padding-top:45px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>Check Your LinkedIn Profile</h1>
+  <p class="intro">Select each numbered part of the sample, then compare it with your LinkedIn profile. Answering “No” adds a clear next step to your fix list.</p>
+
+  <div class="top-actions">
+    <a class="open-link" href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer">Open my LinkedIn profile</a>
+    <span class="panel-help" style="margin:0">Keep it open in another tab as you compare.</span>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress" role="progressbar" aria-label="Questions answered" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><span id="bar"></span></div>
+    <span class="progress-text" id="progressText">0 of 7 answered</span>
+  </div>
+
+  <div class="workspace">
+    <div class="profile-wrap">
+      <article class="profile" id="sampleProfile" data-show="photo" aria-label="Sample student LinkedIn profile">
+        <div class="cover" aria-hidden="true"></div>
+        <div class="profile-main">
+
+          <section class="top-card">
+            <div class="avatar" data-part="photo" aria-label="Sample profile photo">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <circle cx="32" cy="22" r="12" fill="#7e858b"/>
+                <path d="M12 58c2-14 10-21 20-21s18 7 20 21" fill="#7e858b"/>
+              </svg>
+            </div>
+            <div class="name">Jordan Lee</div>
+            <div class="headline" data-part="headline">Psychology Student | Youth Development | Research + Communication</div>
+            <div class="location">Iowa City, Iowa</div>
+          </section>
+
+          <section class="profile-section" data-part="about">
+            <h2>About</h2>
+            <p>I’m a psychology student interested in work that supports children and families. Through peer mentoring and research coursework, I’ve built skills in communication, research, and relationship building. I’m especially interested in roles that help young people access support and opportunities.</p>
+          </section>
+
+          <section class="profile-section" data-part="experience">
+            <h2>Experience</h2>
+            <div class="experience-row">
+              <div class="role">Peer Mentor · University Program</div>
+              <div class="meta">August 2025–Present</div>
+              <p style="margin-top:5px">Support first-year students as they adjust to college and connect with campus resources.</p>
+              <ul class="bullets">
+                <li>Meet individually with students to identify questions and next steps</li>
+                <li>Connect students with academic, career, and campus resources</li>
+                <li>Help facilitate small-group activities and peer discussions</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="profile-section" data-part="education">
+            <h2>Education</h2>
+            <div class="edu-row">
+              <div class="role">University of Iowa</div>
+              <div class="meta">BA Psychology · Expected May 2027</div>
+              <p style="margin-top:4px">Minor: Human Relations · Dean’s List</p>
+            </div>
+          </section>
+
+          <section class="profile-section" data-part="skills">
+            <h2>Skills</h2>
+            <div class="skill-tags">
+              <span class="skill-tag">Communication</span>
+              <span class="skill-tag">Research</span>
+              <span class="skill-tag">Relationship Building</span>
+              <span class="skill-tag">Program Planning</span>
+              <span class="skill-tag">Active Listening</span>
+              <span class="skill-tag">Microsoft Excel</span>
+            </div>
+            
+          </section>
+
+          <section class="profile-section" data-part="interests">
+            <h2>Interests & network</h2>
+            <div class="following">
+              <div class="follow-row"><span class="follow-dot"></span><span>Youth development organization</span></div>
+              <div class="follow-row"><span class="follow-dot"></span><span>Professional association</span></div>
+              <div class="follow-row"><span class="follow-dot"></span><span>Employer in a field of interest</span></div>
+            </div>
+          </section>
+
+        </div>
+      </article>
+      <p class="sample-note">The sample is simplified to show what to look for. Use the ideas, not the exact wording.</p>
+    </div>
+
+    <aside class="panel" aria-labelledby="panelTitle">
+      <h2 id="panelTitle">Explore the example</h2>
+      <p class="panel-help">Choose a section. Its question will open directly below it.</p>
+
+      <div class="callouts" id="callouts"></div>
+
+      <section class="fixes">
+        <div class="fix-head">
+          <h3>My LinkedIn fix list</h3>
+          <span class="fix-count" id="fixCount">0 items</span>
+        </div>
+        <p class="panel-help">Your “No” answers will appear here. When a related quick tool can help, you’ll see it directly under that next step.</p>
+        <div id="fixContent"><p class="empty">Nothing added yet. Your “No” answers will appear here.</p></div>
+
+        <div class="actions">
+          <button class="utility copy" id="copyBtn" type="button">Copy my fix list</button>
+          <button class="utility" id="resetBtn" type="button">Start over</button>
+        </div>
+        <p class="status" id="status" role="status"></p>
+      </section>
+    </aside>
+  </div>
+
+  <p class="resource"><a href="https://careers.uiowa.edu/linkedin" target="_blank" rel="noopener">More LinkedIn guidance and resources →</a></p>
+</main>
+
+<script>
+/*
+  Add the relevant Learning Hub quick-tool URLs here.
+  Links only appear in a student's fix list when that tool matches a need they identified.
+  Leave any value blank if there is no related tool.
+*/
+const TOOL_LINKS = {
+  headline: "",
+  about: "",
+  experience: "",
+  skills: "",
+  interests: ""
+};
+
+const checks = [
+  {
+    part:'photo',
+    name:'Photo',
+    q:'Does your profile photo look current, clear, and appropriate for a professional profile?',
+    tip:'Your photo should make you easy to recognize. A simple background and good lighting matter more than having a formal headshot.',
+    details:[
+      'Your face is easy to see',
+      'The photo is current',
+      'You are the only person in the photo',
+      'The background is not distracting'
+    ],
+    fix:'Update your profile photo so it is current, clear, and easy to recognize.'
+  },
+  {
+    part:'headline',
+    name:'Headline',
+    q:'Can someone quickly tell what you are studying or doing, what you bring, and what direction interests you?',
+    tip:'Your headline should say more than your current title. Use it to give a quick sense of your focus and strengths.',
+    details:[
+      'What you are studying, doing, or exploring',
+      'A field, direction, or type of work that interests you',
+      'A few relevant strengths, skills, or roles'
+    ],
+    fix:'Strengthen your headline so someone can quickly understand your focus, strengths, and direction.',
+    tool:'headline',
+    toolLabel:'Build my LinkedIn headline'
+  },
+  {
+    part:'about',
+    name:'About',
+    q:'Does your About section give someone a quick sense of what interests you, what you have done, and what you bring?',
+    tip:'Think of this as a short introduction. It should add context to your profile instead of repeating your resume.',
+    details:[
+      'What you are studying, doing, or exploring',
+      'What kinds of work, topics, or problems interest you',
+      'Relevant strengths, skills, or experience',
+      'A reason or motivation that helps the section sound like you'
+    ],
+    fix:'Revise your About section so it introduces your interests, experience, strengths, and direction in your own voice.',
+    tool:'about',
+    toolLabel:'Plan my About section'
+  },
+  {
+    part:'experience',
+    name:'Experience',
+    q:'Do your experience entries help someone understand what you did and what you contributed?',
+    tip:'LinkedIn gives you room to add a little more context than a resume. Focus on what would help an unfamiliar reader understand the experience.',
+    details:[
+      'Clear title and organization',
+      'A short description when context would help',
+      'Specific contributions, results, tools, or skills',
+      'Relevant numbers or work samples when they add useful evidence'
+    ],
+    fix:'Strengthen your Experience section so each entry clearly shows what you did, contributed, or learned.',
+    tool:'experience',
+    toolLabel:'Identify experiences to include'
+  },
+  {
+    part:'education',
+    name:'Education',
+    q:'Is your Education section complete and useful for where you are right now?',
+    tip:'Start with the basics, then add academic details only when they help tell your story.',
+    details:[
+      'Institution and degree or field of study',
+      'Expected graduation information',
+      'Minor or certificate, if relevant',
+      'Awards, scholarships, or study abroad when useful'
+    ],
+    fix:'Update your Education section with your current degree information and any academic details that add useful context.'
+  },
+  {
+    part:'skills',
+    name:'Skills',
+    q:'Do your skills reflect both what you can do and the kind of work you want to pursue?',
+    tip:'Choose skills that are accurate, relevant, and supported by your experiences. A strong mix may include transferable skills plus field-specific tools, methods, or knowledge.',
+    details:[
+      'Skills are relevant to your interests or goals',
+      'You could explain where you used your most important skills',
+      'You include field-specific skills, tools, or knowledge when appropriate',
+      'Your list is intentional rather than filled with every possible skill'
+    ],
+    fix:'Refine your Skills section so it highlights relevant skills you can support with real experience or examples.',
+    tool:'skills',
+    toolLabel:'Identify my skills'
+  },
+  {
+    part:'interests',
+    name:'Interests & network',
+    q:'Are you using LinkedIn to learn from people and organizations connected to your interests?',
+    tip:'Your profile is only one part of LinkedIn. Following the right people and organizations can help you learn about fields, employers, and opportunities.',
+    details:[
+      'Follow companies or organizations that interest you',
+      'Follow professional groups or people in fields you want to learn about',
+      'Use alumni or other professionals to explore career paths',
+      'Engage with useful content when you have something genuine to add'
+    ],
+    fix:'Use LinkedIn as a learning and networking tool by following people and organizations connected to your interests.',
+    tool:'interests',
+    toolLabel:'Find people and organizations to follow'
+  }
+];
+
+let active = 0;
+const answers = Array(checks.length).fill(null);
+const callouts = document.querySelector('#callouts');
+const sampleProfile = document.querySelector('#sampleProfile');
+const bar = document.querySelector('#bar');
+const progressText = document.querySelector('#progressText');
+const fixCount = document.querySelector('#fixCount');
+const fixContent = document.querySelector('#fixContent');
+const status = document.querySelector('#status');
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[m]));
+}
+
+function detailsHtml(items){
+  return `<div class="mini-checks"><strong>Look for:</strong><ul>${items.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
+}
+
+function drawAccordion(){
+  callouts.innerHTML = checks.map((c,i)=>`
+    <div class="accordion-item">
+      <button class="callout${i===active?' active':''}${answers[i]?' '+answers[i]:''}"
+        type="button" data-i="${i}" aria-expanded="${i===active}" aria-controls="question-${i}">
+        <span class="num">${i+1}</span>${esc(c.name)}
+        <span class="chevron" aria-hidden="true">⌄</span>
+      </button>
+      ${i===active ? `
+        <section class="question" id="question-${i}">
+          <h3>${esc(c.q)}</h3>
+          <p class="tip">${esc(c.tip)}</p>
+          ${detailsHtml(c.details)}
+          <div class="answers">
+            <button class="answer primary" type="button" data-answer="yes" aria-pressed="${answers[i]==='yes'}">Yes</button>
+            <button class="answer" type="button" data-answer="no" aria-pressed="${answers[i]==='no'}">No—add to fix list</button>
+          </div>
+        </section>` : ''}
+    </div>`).join('');
+}
+
+function select(i){
+  active = i;
+  sampleProfile.dataset.show = checks[i].part;
+  drawAccordion();
+}
+
+function render(){
+  const answered = answers.filter(Boolean).length;
+  const fixes = checks.filter((_,i)=>answers[i]==='no');
+
+  bar.style.width = `${Math.round(answered/checks.length*100)}%`;
+  document.querySelector('.progress').setAttribute('aria-valuenow', answered);
+  progressText.textContent = `${answered} of ${checks.length} answered`;
+  fixCount.textContent = `${fixes.length} item${fixes.length===1?'':'s'}`;
+
+  if(fixes.length){
+    fixContent.innerHTML = `<ul class="fix-list">${
+      fixes.map(c=>{
+        const url = c.tool ? TOOL_LINKS[c.tool] : '';
+        const link = url ? `<br><a href="${esc(url)}" target="_blank" rel="noopener">${esc(c.toolLabel)} →</a>` : '';
+        return `<li>${esc(c.fix)}${link}</li>`;
+      }).join('')
+    }</ul>`;
+  } else {
+    fixContent.innerHTML = '<p class="empty">Nothing added yet. Your “No” answers will appear here.</p>';
+  }
+
+  drawAccordion();
+  status.textContent = '';
+}
+
+function answer(value){
+  answers[active] = value;
+  const next = answers.findIndex((a,i)=>!a && i>active);
+  if(next > -1) active = next;
+  render();
+  sampleProfile.dataset.show = checks[active].part;
+}
+
+callouts.onclick = e => {
+  const answerButton = e.target.closest('[data-answer]');
+  if(answerButton){
+    answer(answerButton.dataset.answer);
+    return;
+  }
+  const b = e.target.closest('.callout');
+  if(b) select(Number(b.dataset.i));
+};
+
+resetBtn.onclick = () => {
+  answers.fill(null);
+  active = 0;
+  sampleProfile.dataset.show = checks[0].part;
+  render();
+  document.querySelector('.callout').focus();
+};
+
+copyBtn.onclick = async () => {
+  const fixes = checks.filter((_,i)=>answers[i]==='no');
+  const text = fixes.length
+    ? 'MY LINKEDIN FIX LIST\n\n' + fixes.map(c=>'☐ '+c.fix).join('\n')
+    : 'My LinkedIn profile check did not identify any fixes.';
+  try{
+    await navigator.clipboard.writeText(text);
+    status.textContent = 'Fix list copied!';
+  }catch{
+    status.textContent = 'Copy was blocked. Select and copy the list above.';
+  }
+};
+
+render();
+</script>
+</body>
+</html>
